@@ -12,6 +12,24 @@ Phase 3 — Chat.
 
 ## Completed
 
+- **Phase 4 (partial) — Repo list as cards** (2026-06-28)
+  - `components/repo-card.tsx` (client island) replaces `repo-row.tsx`: shadcn `Card`
+    (title links to `…/chat`, `StatusBadge` in `CardAction`, status-derived description,
+    error in `text-destructive`). Footer action by status — `COMPLETED` → "Open chat"
+    (primary `Link` via `buttonVariants`) + "Re-index" (ghost); else Index / Indexing… /
+    Retry. Reuses `useIndexingStatus` unchanged.
+  - `app/repos/page.tsx`: `<ul>` list → responsive card grid
+    (`grid gap-3 sm:grid-cols-2 lg:grid-cols-3`); `Shell` widened `max-w-2xl` → `max-w-5xl`.
+  - `card` added via shadcn CLI; `components/repo-row.tsx` deleted (no remaining refs).
+  - **Refinements:** equal card heights (`Card h-full` + `CardContent flex-1` so footers
+    bottom-align in the stretch grid); single-installation `InstallationSwitcher` now renders
+    `null` (account already in the heading); header sign-out button replaced by
+    `components/user-menu.tsx` — shadcn `Avatar` (GitHub `avatar_url`, initials fallback) +
+    login as a `DropdownMenu` trigger, menu shows login + a destructive **Sign out** item
+    (calls the `signOut` server action via `onClick`). `Shell` takes an optional `user`.
+    `avatar`/`dropdown-menu` added via shadcn CLI.
+  - Gates: `typecheck`/`build` pass; `lint` clean except the pre-existing `Geist_Mono` warning.
+
 - **Phase 3 (start) — Per-repo workspace shell + nav** (2026-06-27)
   - **Decision: the repo route is a workspace, not a chat page.** Future tools (PR
     review, issue analysis, auto-PR/rules) are per-repo, so `/repos/[owner]/[repo]` is a

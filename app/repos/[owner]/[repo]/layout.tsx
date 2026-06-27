@@ -78,7 +78,7 @@ export default async function RepoWorkspaceLayout({
             <SidebarTrigger className="-ml-1" />
             <Separator
               orientation="vertical"
-              className="mr-1 data-[orientation=vertical]:h-4"
+              className=""
             />
             <div className="flex min-w-0 items-baseline gap-1 text-sm">
               <Link

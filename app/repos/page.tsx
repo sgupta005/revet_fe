@@ -1,26 +1,16 @@
-import { ExternalLink, LogOut, Plus, RefreshCw } from "lucide-react"
+import { ExternalLink, Plus, RefreshCw } from "lucide-react"
 import Link from "next/link"
 
-import { installApp, signOut } from "@/app/actions"
+import { installApp } from "@/app/actions"
 import { InstallationSwitcher } from "@/components/installation-switcher"
-import { RepoRow } from "@/components/repo-row"
+import { RepoCard } from "@/components/repo-card"
+import { UserMenu } from "@/components/user-menu"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { getMe, listRepositories } from "@/lib/api"
 import { buildManageInstallationUrl } from "@/lib/github"
 import { requireSession } from "@/lib/session"
 import { cn } from "@/lib/utils"
-import type { Me, Repository } from "@/lib/types"
-
-function SignOutButton() {
-  return (
-    <form action={signOut}>
-      <Button type="submit" variant="outline" size="sm">
-        <LogOut />
-        Sign out
-      </Button>
-    </form>
-  )
-}
+import type { Me, Repository, User } from "@/lib/types"
 
 export default async function ReposPage({
   searchParams,
@@ -45,7 +35,7 @@ export default async function ReposPage({
 
   if (me.installations.length === 0) {
     return (
-      <Shell>
+      <Shell user={me.user}>
         <div className="flex flex-col items-start gap-3 rounded-md border border-border p-6">
           <p className="text-sm font-medium">Revet isn&apos;t installed yet</p>
           <p className="text-sm text-muted-foreground">
@@ -77,6 +67,7 @@ export default async function ReposPage({
 
   return (
     <Shell
+      user={me.user}
       switcher={
         <InstallationSwitcher
           installations={me.installations}
@@ -114,13 +105,14 @@ export default async function ReposPage({
           Couldn&apos;t load repositories. Try refreshing.
         </p>
       ) : repos && repos.length > 0 ? (
-        <ul className="border-t border-border">
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {repos.map((repo) => (
-            <RepoRow
-              key={repo.full_name}
-              fullName={repo.full_name}
-              initialStatus={repo.indexing_status}
-            />
+            <li key={repo.full_name}>
+              <RepoCard
+                fullName={repo.full_name}
+                initialStatus={repo.indexing_status}
+              />
+            </li>
           ))}
         </ul>
       ) : (
@@ -148,15 +140,19 @@ export default async function ReposPage({
 function Shell({
   children,
   switcher,
+  user,
 }: {
   children: React.ReactNode
   switcher?: React.ReactNode
+  user?: User
 }) {
   return (
-    <main className="mx-auto flex min-h-svh max-w-2xl flex-col gap-6 p-6">
+    <main className="mx-auto flex min-h-svh max-w-5xl flex-col gap-6 p-6">
       <header className="flex items-center justify-between gap-4">
         <h1 className="text-xl font-medium">Revet</h1>
-        <SignOutButton />
+        {user ? (
+          <UserMenu login={user.login} avatarUrl={user.avatar_url} />
+        ) : null}
       </header>
       {switcher}
       {children}

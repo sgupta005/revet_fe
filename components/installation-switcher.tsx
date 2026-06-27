@@ -10,11 +10,10 @@ export function InstallationSwitcher({
   installations: Installation[]
   activeId: number
 }) {
+  // A single installation needs no switcher UI; the active account is already
+  // shown in the "Repositories in …" heading.
   if (installations.length <= 1) {
-    const only = installations[0]
-    return only ? (
-      <p className="text-sm text-muted-foreground">{only.account_login}</p>
-    ) : null
+    return null
   }
 
   return (
