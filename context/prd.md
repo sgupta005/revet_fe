@@ -103,7 +103,9 @@ accounts system — giving real identity and per-user access control from day on
 
 - Passwords, email/password accounts, or any identity provider other than GitHub.
 - UIs for PR review, issue analysis, auto-PR, custom rules (backend features without a
-  frontend surface yet).
+  frontend surface yet). When added, each is a **tool in the per-repo workspace** (a sibling
+  route under `/repos/[owner]/[repo]/`), not a redesign — see `architecture.md`
+  §UI surfaces & workspace model.
 - Billing, org/team management, fine-grained RBAC beyond per-installation access checks.
 - Any data persistence the frontend owns beyond the session cookie and thread ids.
 

@@ -43,20 +43,26 @@ app/
   connected/             # OAuth callback Route Handler (server)
     route.ts              #   validate state, POST code→{API}/auth/session, set cookie, → /repos
   repos/
-    page.tsx              # installations + repo list for the active installation (Server Component)
-    [owner]/[repo]/
-      page.tsx            # repo detail + chat (server shell + client chat island)
+    page.tsx              # repo list as a card grid + installation switcher + user menu (Server Component)
+    [owner]/[repo]/       # PER-REPO WORKSPACE (not a chat page — see §UI surfaces)
+      layout.tsx          #   workspace shell: sidebar tool nav + repo header (Server Component)
+      page.tsx            #   redirects to ./chat (workspace opens on Chat)
+      chat/page.tsx       #   F3 chat (server shell + client chat island)
+      pulls/ issues/ rules/  #   FUTURE tools — sibling routes, added as features land
   api/                    # same-origin proxy Route Handlers for CLIENT→backend calls
     repos/[owner]/[repo]/
       index/route.ts        #   POST → backend index (forwards session as Bearer)
       index-status/route.ts #   GET  → backend index-status (client polling)
+      chat/route.ts         #   POST → backend /chat SSE, streamed through (Phase 3)
 components/
   ui/                     # shadcn/base-ui primitives — generated, not hand-edited
   theme-provider.tsx
-  installation-switcher.tsx # links per installation (URL state ?installation=<id>)
+  installation-switcher.tsx # links per installation (URL state ?installation=<id>); null for a single one
   status-badge.tsx        # indexing-status badge (pure)
-  repo-row.tsx            # client island: badge + index/re-index + polling
-  ...feature components   # chat-message, chat-composer, etc.
+  repo-card.tsx           # client island: card + status badge + index/re-index + polling
+  user-menu.tsx           # client island: avatar + dropdown (sign out)
+  workspace-nav.tsx       # client island: sidebar tool nav (active via useSelectedLayoutSegment)
+  ...chat components      # chat-message, chat-composer, citation-chip, code-peek (Phase 3)
 hooks/
   use-chat-stream.ts      # SSE consumption for chat
   use-indexing-status.ts  # poll a repo's indexing status
@@ -70,6 +76,65 @@ lib/
 
 Routes and filenames above are the intended shape; confirm exact App Router conventions
 against the bundled Next 16 docs before implementing.
+
+## UI surfaces & workspace model
+
+The visual language is the shadcn **`base-lyra`** style on **Base UI** (`@base-ui/react`),
+all monospace (`font-mono` on `html`), dark-default, emerald/green primary, **sharp corners**
+(`rounded-none` throughout). Two cross-cutting conventions:
+
+- **`components/ui/` is shadcn-CLI-generated and not hand-edited** (invariant #5). Add
+  primitives with `pnpm dlx shadcn@latest add <name>`; compose feature components around
+  them. CLI-generated surfaces are excluded from eslint (`components/ui/**`,
+  `hooks/use-mobile.ts`) since they're authored to shadcn's standards.
+- **This shadcn build has no `asChild`.** To render a primitive as another element (e.g. a
+  `next/link`), use Base UI's **`render` prop**: `render={<Link href={…} />}`. For
+  link-styled buttons in Server Components, `buttonVariants({…})` + `cn` is the established
+  pattern (the `Button` has no `asChild` either).
+
+### Repo list — cards (`/repos`)
+- A responsive **card grid** (`grid gap-3 sm:grid-cols-2 lg:grid-cols-3`), not a list.
+  Each `repo-card` shows `owner/repo` (title links into the workspace), a `status-badge`,
+  a status-derived description, and a **status-driven primary action**:
+  `COMPLETED` → "Open chat" + "Re-index"; `NOT_STARTED` → "Index"; `INDEXING` → spinner;
+  `FAILED` → "Retry". Cards are **equal height** (`Card h-full` + `CardContent flex-1` so
+  footers bottom-align in the stretch grid).
+- Header: "Revet" wordmark + a **user menu** (`user-menu`) — shadcn `Avatar` (GitHub
+  `avatar_url`, initials fallback) + login, opening a `DropdownMenu` with the login and a
+  destructive **Sign out** (the `signOut` server action). A single installation renders no
+  switcher (the account is already in the "Repositories in …" heading).
+- The repo-list endpoint returns only `{ full_name, indexing_status }`, so cards show **no
+  richer metadata yet** (chunk count, last-indexed, language). Adding it means folding
+  `chunk_count` into the list response or a per-card fetch — deferred.
+
+### Per-repo workspace (`/repos/[owner]/[repo]`) — the extensibility decision
+- **The repo route is a workspace, not a chat page.** All post-v1 features (PR review,
+  issue analysis, auto-PR, custom rules — see `prd.md` §6) are *per-repo*, so the route is a
+  shell with a **left tool nav** (shadcn `Sidebar`, `collapsible="icon"`) and Chat is just
+  the first tool.
+- **Adding a future feature = one nav entry + one sibling route.** `workspace-nav` holds a
+  static `TOOLS` list; each tool has an `available` flag. Unbuilt tools render **disabled
+  with a "Soon" badge** (roadmap visible, non-blocking); shipping one = flip `available` and
+  create `app/repos/[owner]/[repo]/<segment>/page.tsx`. **No nav/layout rework.** Active tool
+  is derived with `useSelectedLayoutSegment()`.
+- The shell `layout.tsx` is a Server Component (`requireSession`); sidebar
+  expanded/collapsed state persists via the `sidebar_state` cookie (read server-side for
+  `defaultOpen`). It's wrapped in `TooltipProvider` (the sidebar's `SidebarProvider` does
+  **not** include it) so collapsed-rail tooltips work. Header: `SidebarTrigger` + owner/repo
+  breadcrumb + "View on GitHub".
+
+### Chat page (`…/chat`, F3) — planned design
+Built in Phase 3; the agreed layout (so citations — the differentiator — are first-class):
+- **Three regions:** a scrolling **message list**, a **composer**, and a right-hand
+  **code-peek panel** that opens when a citation is clicked (v1 fallback: link to the file on
+  GitHub at the line range). The peek panel is reused later by PR review / issue analysis.
+- **Citations** render as **chips beneath each assistant message** (`path · symbol · L-L`).
+- **Streaming:** render deltas incrementally with a cursor + a **Stop** control; never
+  buffer the whole response (invariant #4).
+- **Empty state:** example prompts that prefill the composer (doubles as onboarding).
+- **Composer:** Enter to send, Shift+Enter newline; **disabled unless status is
+  `COMPLETED`**, with a "repo isn't indexed yet" banner. A **New thread** control resets the
+  per-repo `thread_id` (localStorage; see §State).
 
 ## Rendering & data-fetching strategy
 
