@@ -39,6 +39,12 @@ export function buildInstallUrl(state?: string): string {
   return url.toString()
 }
 
+// Link to an installation's settings page on GitHub, where the user manages
+// which repositories the app can access.
+export function buildManageInstallationUrl(installationId: number): string {
+  return `https://github.com/settings/installations/${installationId}`
+}
+
 export type CallbackParams = {
   code: string
   state: string

@@ -4,7 +4,12 @@
 // `credentials: "include"` (`context/code-standards.md` §Data fetching).
 
 import { SESSION_COOKIE } from "@/lib/session"
-import type { CreateSessionResponse, Me } from "@/lib/types"
+import type {
+  CreateSessionResponse,
+  IndexStatusResponse,
+  Me,
+  Repository,
+} from "@/lib/types"
 
 function baseUrl(): string {
   const url =
@@ -46,11 +51,19 @@ type RequestOptions = {
   // Whether the request carries the session (skip for the session-creation call,
   // which authenticates with the OAuth `code` instead).
   auth?: boolean
+  // Server-side 401 → redirect to sign-in. Disable for proxy Route Handlers,
+  // which should surface the status to the client instead of redirecting an XHR.
+  redirectOnAuthError?: boolean
 }
 
 async function request<T>(
   path: string,
-  { method = "GET", body, auth = true }: RequestOptions = {}
+  {
+    method = "GET",
+    body,
+    auth = true,
+    redirectOnAuthError = true,
+  }: RequestOptions = {}
 ): Promise<T> {
   const headers: Record<string, string> = {}
   if (body !== undefined) headers["content-type"] = "application/json"
@@ -64,7 +77,12 @@ async function request<T>(
     cache: "no-store",
   })
 
-  if (res.status === 401 && auth && typeof window === "undefined") {
+  if (
+    res.status === 401 &&
+    auth &&
+    redirectOnAuthError &&
+    typeof window === "undefined"
+  ) {
     const { redirect } = await import("next/navigation")
     redirect("/")
   }
@@ -92,4 +110,39 @@ export function logout(): Promise<void> {
 // GET /me — current user and their installations.
 export function getMe(): Promise<Me> {
   return request<Me>("/me")
+}
+
+// GET /installations/{id}/repositories — the user's repos for an installation
+// with indexing status. Called from the Server Component repo list.
+export function listRepositories(
+  installationId: number,
+  refresh = false
+): Promise<Repository[]> {
+  const query = refresh ? "?refresh=1" : ""
+  return request<Repository[]>(
+    `/installations/${installationId}/repositories${query}`
+  )
+}
+
+// POST /repos/{owner}/{repo}/index — enqueue (re)indexing. Used by the proxy
+// Route Handler, so it surfaces a 401 rather than redirecting.
+export function indexRepository(
+  owner: string,
+  repo: string
+): Promise<{ status: string; full_name: string }> {
+  return request(`/repos/${owner}/${repo}/index`, {
+    method: "POST",
+    redirectOnAuthError: false,
+  })
+}
+
+// GET /repos/{owner}/{repo}/index-status — current indexing status. Used by the
+// proxy Route Handler for client-side polling.
+export function getIndexStatus(
+  owner: string,
+  repo: string
+): Promise<IndexStatusResponse> {
+  return request<IndexStatusResponse>(`/repos/${owner}/${repo}/index-status`, {
+    redirectOnAuthError: false,
+  })
 }

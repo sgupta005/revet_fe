@@ -4,14 +4,42 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-Phase 1 — GitHub OAuth Sign-in (complete; backend endpoints implemented and contract
-reconciled).
+Phase 2 — Repo List & Indexing (complete).
 
 ## Current Goal
 
-Phase 2 — Repo List & Indexing.
+Phase 3 — Chat.
 
 ## Completed
+
+- **Phase 2 — Repo List & Indexing** (2026-06-27)
+  - `lib/types.ts`: `IndexingStatus`, `Repository`, `IndexStatusResponse`.
+  - `lib/api.ts`: `listRepositories(installationId, refresh?)`, `indexRepository`,
+    `getIndexStatus`. Added a `redirectOnAuthError` request option — the proxy-facing
+    calls (`indexRepository`/`getIndexStatus`) set it `false` so a `401` surfaces to the
+    client instead of redirecting an XHR; `listRepositories`/`getMe` keep the redirect.
+  - **Client→backend auth via the proxy method** (chosen over shared-cookie-domain).
+    Same-origin Route Handlers `app/api/repos/[owner]/[repo]/index/route.ts` (POST → 202)
+    and `.../index-status/route.ts` (GET): the browser sends the `httpOnly` cookie to the
+    Next server, which forwards it to the backend as a Bearer header via `lib/api`.
+  - `hooks/use-indexing-status.ts`: owns a repo's live status; `triggerIndex` POSTs the
+    proxy and polls the status proxy every 3s **only while `INDEXING`**, stopping on a
+    terminal state / unmount (invariant #7); redirects to `/` on a `401`.
+  - `components/status-badge.tsx` (pure), `components/repo-row.tsx` (client island:
+    badge + Index/Re-index button + polling), `components/installation-switcher.tsx`
+    (Server Component; links per installation, URL state `?installation=<id>`).
+  - `app/repos/page.tsx`: Server Component — `requireSession` + `getMe`; installation
+    switcher; per-installation repo list via `listRepositories`; **Refresh** (`?refresh=1`)
+    and **Manage on GitHub** links; explicit empty states (no installations →
+    `installApp`; no repos → `buildManageInstallationUrl`) and error states.
+  - `app/actions.ts`: added `installApp` (sets `state`, redirects to the install URL);
+    `lib/github.ts`: added `buildManageInstallationUrl`.
+  - Link-styled actions use `buttonVariants` (the shadcn/base-ui `Button` here has **no
+    `asChild`**). Gates pass: `pnpm typecheck`, `pnpm lint` (one pre-existing scaffold
+    warning), `pnpm build`. Note: route `RouteContext` types need `next typegen`/build
+    after adding Route Handlers.
+  - **Gap 1 (webhook-populated `Repository` rows)** handled by the user via **ngrok**
+    forwarding so installation webhooks reach the backend; no on-demand-upsert change made.
 
 - **Phase 1 — GitHub OAuth Sign-in** (2026-06-27)
   - `lib/types.ts`: `User`, `Installation`, `Me`, `CreateSessionResponse` (mirrors the
@@ -81,16 +109,14 @@ Phase 2 — Repo List & Indexing.
 
 ## Next Up
 
-1. **Phase 2 — Repo List & Indexing.** Backend endpoints now exist:
-   `GET /installations/{installation_id}/repositories` (`?refresh=1`),
-   `POST /repos/{owner}/{repo}/index` (202), `GET /repos/{owner}/{repo}/index-status`
-   (`{ full_name, indexing_status, chunk_count }`). Replace the placeholder
-   `app/repos/page.tsx`; add `RepositoryOut`/`IndexStatusResponse` types, the installation
-   switcher, status badges, index action, and `use-indexing-status` polling.
-2. **Phase 3 — Chat** (reuses backend `/chat` SSE, now session-gated). Note: client-side
-   calls can't read the `httpOnly` cookie for a Bearer header — wire client→backend auth
-   via a route-handler proxy or a shared cookie domain (the deferred deployment decision).
-3. **Phase 4 — Polish**.
+1. **Phase 3 — Chat.** `/repos/[owner]/[repo]` chat page; `use-chat-stream` consuming the
+   backend `/chat` SSE-over-POST via `fetch`/`ReadableStream`; message list + composer;
+   per-repo `thread_id` in localStorage; grounded-citation rendering. Client→backend auth
+   reuses the **proxy method** from Phase 2 (a same-origin `/api/chat` Route Handler that
+   streams the backend response through with the Bearer header). Confirm the SSE frame and
+   citation shape against `revet_be`.
+2. **Phase 4 — Polish** (loading/error/empty consistency, theme toggle, responsive,
+   accessibility, refined switcher).
 
 ## Open Questions / Pending Decisions
 
@@ -99,19 +125,20 @@ Phase 2 — Repo List & Indexing.
   config, and the GitHub App OAuth setup. Contract reconciled (see Completed → backend
   contract reconciled). Backend reads `Authorization: Bearer` or a `session` cookie; the FE
   forwards Bearer.
-- **Client→backend auth (Phase 3).** Server Components forward the token as a Bearer
-  header, but client-side fetches (chat SSE) can't read the `httpOnly` cookie. Resolve via
-  a route-handler proxy that injects Bearer, or a shared cookie domain so the browser sends
-  the `session` cookie directly. Tied to the callback-placement/deployment decision below.
+- ~~**Client→backend auth.**~~ **Resolved (proxy method).** Client-side calls go through
+  same-origin Next Route Handlers under `app/api/...` that read the `httpOnly` cookie and
+  forward a Bearer header to the backend (Phase 2: index + status). Phase 3 chat SSE reuses
+  this via an `/api/chat` streaming proxy. Shared-cookie-domain rejected.
 - **Callback placement (deployment).** Frontend `/connected` Route Handler forwards the
   code to the backend (keeps the session cookie first-party) vs. backend owns the callback
   and sets a cookie on a shared parent domain. Decide based on deployment topology —
   `github-integration.md` §"Why the callback lands on the frontend".
 - **User-token lifetime.** Expiring (8h) + refresh token (6mo) vs. non-expiring GitHub App
   user tokens. Backend supports refresh (`call_with_refresh` in `app/auth/dependencies.py`).
-- **Repo-list source.** Backend joins live installation repos with stored `Repository`
-  rows and offers `?refresh=1`. `RepositoryOut` = `{ full_name, indexing_status }`. Wire in
-  Phase 2.
+- ~~**Repo-list source.**~~ **Resolved & wired (Phase 2).** Backend joins live installation
+  repos with stored `Repository` rows; `?refresh=1` re-pulls. `Repository` =
+  `{ full_name, indexing_status }`. Caveat: index/index-status 404 without a stored row
+  (webhook-created) — accepted, handled via ngrok webhook forwarding in dev.
 - **Citation shape.** Confirm how the backend `/chat` stream surfaces grounded citations
   (inline in text vs. a structured field) so the chat UI can render them.
 - **`thread_id` scheme.** Generation (client UUID) + per-repo localStorage persistence —

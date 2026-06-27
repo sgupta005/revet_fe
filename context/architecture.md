@@ -46,11 +46,17 @@ app/
     page.tsx              # installations + repo list for the active installation (Server Component)
     [owner]/[repo]/
       page.tsx            # repo detail + chat (server shell + client chat island)
-  api/                    # Route Handlers for cookie writes / SSE proxy if needed
+  api/                    # same-origin proxy Route Handlers for CLIENT→backend calls
+    repos/[owner]/[repo]/
+      index/route.ts        #   POST → backend index (forwards session as Bearer)
+      index-status/route.ts #   GET  → backend index-status (client polling)
 components/
   ui/                     # shadcn/base-ui primitives — generated, not hand-edited
   theme-provider.tsx
-  ...feature components   # repo-card, status-badge, chat-message, chat-composer, etc.
+  installation-switcher.tsx # links per installation (URL state ?installation=<id>)
+  status-badge.tsx        # indexing-status badge (pure)
+  repo-row.tsx            # client island: badge + index/re-index + polling
+  ...feature components   # chat-message, chat-composer, etc.
 hooks/
   use-chat-stream.ts      # SSE consumption for chat
   use-indexing-status.ts  # poll a repo's indexing status
@@ -109,6 +115,15 @@ callback Route Handler. Repo discovery uses the user token (`GET /user/installat
 the backend acts on repos with the **installation token** but only after verifying the
 session user can access the target installation. `installation_id` is a reference gated
 by the session, **not** a secret.
+
+**Token forwarding.** The backend accepts the session as `Authorization: Bearer <token>`
+(or a `session` cookie). Our session cookie is `revet_session` and is `httpOnly`, so:
+- **Server Components** read it via `cookies()` and forward it as a **Bearer** header
+  (`lib/api.ts`) — used for the repo list and other server fetches.
+- **Client Components** can't read the `httpOnly` cookie, so they call **same-origin proxy
+  Route Handlers** under `app/api/...`; the browser sends the cookie to our Next server,
+  which forwards it to the backend as a Bearer header. This is the **proxy method** (chosen
+  over a shared cookie domain) and is reused for the Phase 3 chat SSE stream.
 
 ## Backend API contract (cross-repo dependency)
 

@@ -25,3 +25,16 @@ export type CreateSessionResponse = {
   session_token: string
   user: User
 }
+
+export type IndexingStatus = "NOT_STARTED" | "INDEXING" | "COMPLETED" | "FAILED"
+
+export type Repository = {
+  full_name: string
+  indexing_status: IndexingStatus
+}
+
+export type IndexStatusResponse = {
+  full_name: string
+  indexing_status: IndexingStatus
+  chunk_count: number
+}
