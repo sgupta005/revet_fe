@@ -4,13 +4,56 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-Phase 0 — Scaffold (complete). Context folder authored.
+Phase 1 — GitHub OAuth Sign-in (complete; backend endpoints implemented and contract
+reconciled).
 
 ## Current Goal
 
-Phase 1 — GitHub OAuth Sign-in.
+Phase 2 — Repo List & Indexing.
 
 ## Completed
+
+- **Phase 1 — GitHub OAuth Sign-in** (2026-06-27)
+  - `lib/types.ts`: `User`, `Installation`, `Me`, `CreateSessionResponse` (mirrors the
+    backend contract; finalize shapes with the backend).
+  - `lib/github.ts`: `generateState`, `buildAuthorizeUrl`, `buildInstallUrl`,
+    `parseCallbackParams`. The sign-in button uses the **authorize URL** (`client_id` +
+    `state`); the install URL builder is ready for Phase 2 empty/expand-repos states.
+  - `lib/session.ts`: `SESSION_COOKIE` (`revet_session`), `OAUTH_STATE_COOKIE`
+    (`revet_oauth_state`), `getSessionToken`, `isLoggedIn`, `requireSession` guard.
+  - `lib/api.ts`: typed credentialed client — `createSession`, `logout`, `getMe`.
+    Server requests forward the session cookie (lazy `next/headers` import so the module
+    is client-safe); `401` on an authed server call redirects to `/`. `ApiError` for
+    non-OK responses. Base URL: `API_BASE_URL` → `NEXT_PUBLIC_API_BASE_URL`.
+  - `app/actions.ts`: `signIn` (sets the short-lived `state` cookie, redirects to GitHub)
+    and `signOut` (best-effort `/auth/logout`, clears the cookie) server actions.
+  - `app/connected/route.ts`: validates `state`, exchanges `code` via `POST /auth/session`,
+    sets the `httpOnly`/`SameSite=Lax`/`Secure`(prod) session cookie, redirects to `/repos`;
+    any failure clears `state` and returns to `/?error=oauth`.
+  - `app/page.tsx`: landing with "Sign in with GitHub" (`<form action={signIn}>`),
+    redirects logged-in users to `/repos`, surfaces `?error=oauth`.
+  - `app/repos/page.tsx`: **minimal** authenticated landing (`requireSession` + `getMe`,
+    sign-out) — placeholder; the full installation switcher + repo list is Phase 2.
+  - `.env.example` (+ `.gitignore` exception) documents the four env vars; no secrets.
+  - Note: `lucide-react` (this pinned version) has **no GitHub brand icon** — used
+    `GitBranch` on the sign-in button.
+  - Gates pass: `pnpm typecheck`, `pnpm lint` (one pre-existing scaffold warning in
+    `app/layout.tsx`), `pnpm build`.
+- **Backend contract reconciled against `revet_be` (`app/api.py`, `app/auth/dependencies.py`)**
+  (2026-06-27) — the backend implemented `/auth/session`, `/auth/logout`, `/me` (+ repo
+  endpoints for Phase 2). FE adjustments to match the real shapes:
+  - **Auth header, not cookie name.** Backend reads `Authorization: Bearer <token>` or a
+    cookie literally named `session`; our cookie is `revet_session`. `lib/api.ts` now
+    forwards the token as **`Authorization: Bearer`** server-side (decoupled from cookie
+    name / cross-origin cookie domain). Backend sets no cookie — the FE `/connected` route
+    owns the cookie; backend returns `{ session_token, user }` as JSON.
+  - `SessionRequest` is `{ code }` only → `createSession(code)` drops `installation_id`.
+  - `UserOut` = `{ id, github_id, login, avatar_url }` (added `id`); `InstallationOut` =
+    `{ id, account_login, account_type }` (no `avatar_url`) → `lib/types.ts` updated.
+  - `exchange_code` sends no `redirect_uri` (GitHub uses the app's configured callback) —
+    our authorize URL sends none either, so no mismatch. `frontend_origin` defaults to
+    `http://localhost:3000`; CORS allows it with credentials.
+
 
 - **Context folder authored** (2026-06-27)
   - `project-overview.md`, `prd.md`, `architecture.md`, `code-standards.md`,
@@ -38,30 +81,37 @@ Phase 1 — GitHub OAuth Sign-in.
 
 ## Next Up
 
-1. **Phase 1 — GitHub OAuth Sign-in**: "Sign in with GitHub" (authorize URL via
-   `NEXT_PUBLIC_GITHUB_OAUTH_CLIENT_ID`, combined install via `NEXT_PUBLIC_GITHUB_APP_SLUG`,
-   `state`), `/connected` Route Handler (validate `state` → `POST` code to
-   `{API}/auth/session` → set session cookie), `lib/session.ts` guard, credentialed
-   `lib/api.ts` skeleton, sign-out.
-2. **Phase 2 — Repo List & Indexing** (needs session-gated backend endpoints + CORS).
-3. **Phase 3 — Chat** (reuses backend `/chat` SSE, now session-gated).
-4. **Phase 4 — Polish**.
+1. **Phase 2 — Repo List & Indexing.** Backend endpoints now exist:
+   `GET /installations/{installation_id}/repositories` (`?refresh=1`),
+   `POST /repos/{owner}/{repo}/index` (202), `GET /repos/{owner}/{repo}/index-status`
+   (`{ full_name, indexing_status, chunk_count }`). Replace the placeholder
+   `app/repos/page.tsx`; add `RepositoryOut`/`IndexStatusResponse` types, the installation
+   switcher, status badges, index action, and `use-indexing-status` polling.
+2. **Phase 3 — Chat** (reuses backend `/chat` SSE, now session-gated). Note: client-side
+   calls can't read the `httpOnly` cookie for a Bearer header — wire client→backend auth
+   via a route-handler proxy or a shared cookie domain (the deferred deployment decision).
+3. **Phase 4 — Polish**.
 
 ## Open Questions / Pending Decisions
 
-- **Auth backend doesn't exist yet.** `/auth/session`, `/auth/logout`, `/me`, a user
-  record, a Redis session store, OAuth client id/secret config, and the GitHub App's OAuth
-  setup are **new `revet_be` work** blocking Phase 1. Finalize shapes with the backend.
+- ~~**Auth backend doesn't exist yet.**~~ **Resolved** — `revet_be` implemented
+  `/auth/session`, `/auth/logout`, `/me`, the user record, Redis session store, OAuth
+  config, and the GitHub App OAuth setup. Contract reconciled (see Completed → backend
+  contract reconciled). Backend reads `Authorization: Bearer` or a `session` cookie; the FE
+  forwards Bearer.
+- **Client→backend auth (Phase 3).** Server Components forward the token as a Bearer
+  header, but client-side fetches (chat SSE) can't read the `httpOnly` cookie. Resolve via
+  a route-handler proxy that injects Bearer, or a shared cookie domain so the browser sends
+  the `session` cookie directly. Tied to the callback-placement/deployment decision below.
 - **Callback placement (deployment).** Frontend `/connected` Route Handler forwards the
   code to the backend (keeps the session cookie first-party) vs. backend owns the callback
   and sets a cookie on a shared parent domain. Decide based on deployment topology —
   `github-integration.md` §"Why the callback lands on the frontend".
 - **User-token lifetime.** Expiring (8h) + refresh token (6mo) vs. non-expiring GitHub App
-  user tokens. Default to expiring+refresh (more secure); confirm with the backend.
-- **Repo/index endpoints don't exist yet** and must be session-gated + access-checked
-  (`architecture.md` §Backend API contract). Required for Phase 2.
-- **Repo-list source.** Default to stored `Repository` rows joined with the user's live
-  installation repos (fast, has status); offer a `?refresh=1` live pull. Confirm shapes.
+  user tokens. Backend supports refresh (`call_with_refresh` in `app/auth/dependencies.py`).
+- **Repo-list source.** Backend joins live installation repos with stored `Repository`
+  rows and offers `?refresh=1`. `RepositoryOut` = `{ full_name, indexing_status }`. Wire in
+  Phase 2.
 - **Citation shape.** Confirm how the backend `/chat` stream surfaces grounded citations
   (inline in text vs. a structured field) so the chat UI can render them.
 - **`thread_id` scheme.** Generation (client UUID) + per-repo localStorage persistence —
