@@ -12,6 +12,34 @@ Phase 3 — Chat.
 
 ## Completed
 
+- **Phase 3 (start) — Per-repo workspace shell + nav** (2026-06-27)
+  - **Decision: the repo route is a workspace, not a chat page.** Future tools (PR
+    review, issue analysis, auto-PR/rules) are per-repo, so `/repos/[owner]/[repo]` is a
+    shell with a left tool nav; adding a feature = flip `available` + create the sibling
+    route. No redesign.
+  - `app/repos/[owner]/[repo]/layout.tsx`: Server Component shell — `requireSession`,
+    `SidebarProvider` (defaultOpen from the `sidebar_state` cookie) + shadcn `Sidebar`
+    (`collapsible="icon"`), `SidebarInset` with a header (`SidebarTrigger` + owner/repo
+    breadcrumb + "View on GitHub"). Wrapped in `TooltipProvider` (SidebarProvider doesn't
+    include it) for collapsed-rail tooltips.
+  - `components/workspace-nav.tsx`: client island — `useSelectedLayoutSegment()` drives
+    `isActive`; static `TOOLS` list (Chat available; PR Review/Issues/Rules/Settings shown
+    disabled with a "Soon" `SidebarMenuBadge`). Nav links via the Base UI **`render` prop**
+    (`render={<Link/>}`) — this shadcn variant has no `asChild`.
+  - `app/repos/[owner]/[repo]/page.tsx`: redirects to `./chat` (workspace opens on Chat).
+  - `app/repos/[owner]/[repo]/chat/page.tsx`: placeholder; real streaming chat is the rest
+    of Phase 3.
+  - `components/repo-row.tsx`: repo name now links to `/repos/<full_name>/chat` (workspace
+    reachable from the list).
+  - **shadcn sidebar added via CLI** (`pnpm dlx shadcn add sidebar`): pulled
+    `components/ui/{sidebar,sheet,tooltip,input,separator,skeleton}.tsx` + `hooks/use-mobile.ts`.
+  - `eslint.config.mjs`: ignore CLI-generated surfaces (`components/ui/**`,
+    `hooks/use-mobile.ts`) — `use-mobile.ts` trips `react-hooks/set-state-in-effect`; not
+    hand-edited (invariant #5).
+  - Gates: `pnpm typecheck`, `pnpm build` pass; `pnpm lint` clean except the pre-existing
+    `Geist_Mono` scaffold warning. **Run `next typegen` (or build) after adding routes** —
+    stale `.next/dev/types` otherwise fails typecheck on `params`.
+
 - **Phase 2 — Repo List & Indexing** (2026-06-27)
   - `lib/types.ts`: `IndexingStatus`, `Repository`, `IndexStatusResponse`.
   - `lib/api.ts`: `listRepositories(installationId, refresh?)`, `indexRepository`,
@@ -105,11 +133,12 @@ Phase 3 — Chat.
 
 ## In Progress
 
-- None.
+- **Phase 3 — Chat.** Workspace shell + nav done (see Completed); next is the streaming
+  chat UI inside `…/chat`.
 
 ## Next Up
 
-1. **Phase 3 — Chat.** `/repos/[owner]/[repo]` chat page; `use-chat-stream` consuming the
+1. **Phase 3 — Chat.** `/repos/[owner]/[repo]/chat` chat page (shell + nav now in place); `use-chat-stream` consuming the
    backend `/chat` SSE-over-POST via `fetch`/`ReadableStream`; message list + composer;
    per-repo `thread_id` in localStorage; grounded-citation rendering. Client→backend auth
    reuses the **proxy method** from Phase 2 (a same-origin `/api/chat` Route Handler that

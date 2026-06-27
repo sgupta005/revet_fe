@@ -1,6 +1,7 @@
 "use client"
 
 import { LoaderCircle } from "lucide-react"
+import Link from "next/link"
 
 import { StatusBadge } from "@/components/status-badge"
 import { Button } from "@/components/ui/button"
@@ -23,7 +24,12 @@ export function RepoRow({
   return (
     <li className="flex items-center justify-between gap-4 border-b border-border py-3">
       <div className="flex min-w-0 items-center gap-3">
-        <span className="truncate text-sm font-medium">{fullName}</span>
+        <Link
+          href={`/repos/${fullName}/chat`}
+          className="truncate text-sm font-medium hover:underline"
+        >
+          {fullName}
+        </Link>
         <StatusBadge status={status} />
       </div>
       <div className="flex shrink-0 items-center gap-2">

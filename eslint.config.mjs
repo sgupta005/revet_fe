@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // shadcn CLI-generated primitives — authored to shadcn's standards, not
+    // hand-edited (see architecture.md invariant #5).
+    "components/ui/**",
+    "hooks/use-mobile.ts",
   ]),
 ]);
 
