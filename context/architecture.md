@@ -123,18 +123,28 @@ all monospace (`font-mono` on `html`), dark-default, emerald/green primary, **sh
   **not** include it) so collapsed-rail tooltips work. Header: `SidebarTrigger` + owner/repo
   breadcrumb + "View on GitHub".
 
-### Chat page (`…/chat`, F3) — planned design
-Built in Phase 3; the agreed layout (so citations — the differentiator — are first-class):
-- **Three regions:** a scrolling **message list**, a **composer**, and a right-hand
-  **code-peek panel** that opens when a citation is clicked (v1 fallback: link to the file on
-  GitHub at the line range). The peek panel is reused later by PR review / issue analysis.
-- **Citations** render as **chips beneath each assistant message** (`path · symbol · L-L`).
-- **Streaming:** render deltas incrementally with a cursor + a **Stop** control; never
-  buffer the whole response (invariant #4).
-- **Empty state:** example prompts that prefill the composer (doubles as onboarding).
-- **Composer:** Enter to send, Shift+Enter newline; **disabled unless status is
-  `COMPLETED`**, with a "repo isn't indexed yet" banner. A **New thread** control resets the
-  per-repo `thread_id` (localStorage; see §State).
+### Chat page (`…/chat`, F3) — built in Phase 3
+Server shell (`page.tsx`) fetches the repo's index status (gates the composer; degrades to
+`NOT_STARTED` on error) and renders the `chat-panel` client island. The island composes:
+- **Message list + composer** in a centered column (`max-w-3xl`); auto-scroll to the latest.
+  The right-hand **code-peek panel is deferred** — see citations below.
+- **Streaming:** `use-chat-stream` consumes the same-origin `/api/.../chat` SSE proxy with
+  `fetch` + a `ReadableStream` reader (never `EventSource`), buffering partial `\n\n` frames
+  across reads; deltas render incrementally with a cursor + a **Stop** control (AbortController);
+  never buffers the whole response (invariant #4).
+- **Citations are inline in the assistant text, not structured.** The backend `/chat` stream
+  emits only `{thread_id}` / `{delta}` / `{done}`; the generate prompt instructs the model to
+  cite file paths + line ranges **inline in the markdown**. So assistant turns render the text
+  verbatim (`whitespace-pre-wrap`); **citation chips + the code-peek panel are deferred** until
+  the backend surfaces a structured citation field (tracked in `progress-tracker.md`). Rich
+  markdown/code-block rendering is likewise deferred (would add a dependency).
+- **`thread_id`:** the **backend mints it** (leading SSE frame); the client persists it per-repo
+  in localStorage (`revet:thread:<full_name>`) and replays it next turn. A **New thread** control
+  clears the key and the message list.
+- **Empty state:** example-prompt buttons (shown only when indexed) that send on click —
+  onboarding.
+- **Composer:** auto-grow `<textarea>`; Enter to send, Shift+Enter newline; **disabled unless
+  status is `COMPLETED`**, with an "index first" banner otherwise.
 
 ## Rendering & data-fetching strategy
 
@@ -204,7 +214,7 @@ indicative — finalize with the backend.
 | `GET`  | `/installations/{installation_id}/repositories` | Repos in an installation + indexing status | **Session-gated, ownership-checked.** Joins live repo list with stored status; `?refresh=1` re-pulls from GitHub |
 | `POST` | `/repos/{owner}/{repo}/index` | Enqueue (re)indexing | **Session-gated.** Enqueues the existing `index_repo` task |
 | `GET`  | `/repos/{owner}/{repo}/index-status` | Read current `indexing_status` (+ counts) | **Session-gated.** May fold into the repositories list |
-| `POST` | `/chat` | Stream a grounded answer (SSE) | **Exists** — now **session-gated.** Needs `repo`, `thread_id`, message |
+| `POST` | `/chat` | Stream a grounded answer (SSE) | **Exists & wired (Phase 3).** Session-gated. Body `{repo, message, thread_id?}`; returns `text/event-stream`, frames `data:{json}` — `{thread_id}` (leading), `{delta}` chunks, `{done:true}`. Citations are **inline in `delta`**, no structured field |
 
 Cross-cutting backend requirements:
 - **CORS** must allow the frontend origin **with credentials** (cookies).

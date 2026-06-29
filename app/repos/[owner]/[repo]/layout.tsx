@@ -33,8 +33,7 @@ export default async function RepoWorkspaceLayout({
   const basePath = `/repos/${owner}/${repo}`
 
   // Persist the expanded/collapsed choice across navigations (shadcn convention).
-  const sidebarOpen =
-    (await cookies()).get("sidebar_state")?.value !== "false"
+  const sidebarOpen = (await cookies()).get("sidebar_state")?.value !== "false"
 
   return (
     <TooltipProvider>
@@ -48,7 +47,7 @@ export default async function RepoWorkspaceLayout({
                   render={<Link href="/repos" />}
                 >
                   <ChevronLeft />
-                  <span className="font-medium">Revet</span>
+                  <span className="font-medium">All Repositories</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -57,29 +56,12 @@ export default async function RepoWorkspaceLayout({
           <SidebarContent>
             <WorkspaceNav basePath={basePath} />
           </SidebarContent>
-
-          <SidebarFooter>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  tooltip="All repositories"
-                  render={<Link href="/repos" />}
-                >
-                  <ChevronLeft />
-                  <span>All repositories</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarFooter>
         </Sidebar>
 
         <SidebarInset>
           <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-4">
             <SidebarTrigger className="-ml-1" />
-            <Separator
-              orientation="vertical"
-              className=""
-            />
+            <Separator orientation="vertical" className="" />
             <div className="flex min-w-0 items-baseline gap-1 text-sm">
               <Link
                 href="/repos"

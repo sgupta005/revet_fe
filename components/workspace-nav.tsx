@@ -32,7 +32,12 @@ type Tool = {
 // matching route at app/repos/[owner]/[repo]/<segment>/page.tsx — no nav rework.
 const TOOLS: Tool[] = [
   { segment: "chat", label: "Chat", icon: MessageSquare, available: true },
-  { segment: "pulls", label: "PR Review", icon: GitPullRequest, available: false },
+  {
+    segment: "pulls",
+    label: "PR Review",
+    icon: GitPullRequest,
+    available: false,
+  },
   { segment: "issues", label: "Issues", icon: CircleDot, available: false },
   { segment: "rules", label: "Rules", icon: ListChecks, available: false },
 ]
@@ -50,7 +55,10 @@ export function WorkspaceNav({ basePath }: { basePath: string }) {
           if (!tool.available) {
             return (
               <SidebarMenuItem key={tool.segment}>
-                <SidebarMenuButton disabled tooltip={`${tool.label} — coming soon`}>
+                <SidebarMenuButton
+                  disabled
+                  tooltip={`${tool.label} — coming soon`}
+                >
                   <Icon />
                   <span>{tool.label}</span>
                 </SidebarMenuButton>

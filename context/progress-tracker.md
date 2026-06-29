@@ -4,13 +4,44 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-Phase 2 — Repo List & Indexing (complete).
+Phase 3 — Chat (complete).
 
 ## Current Goal
 
-Phase 3 — Chat.
+Phase 4 — Polish.
 
 ## Completed
+
+- **Phase 3 (complete) — Streaming chat** (2026-06-28)
+  - **Confirmed the backend `/chat` SSE contract** against `revet_be/app/chat.py`: a POST
+    returning `text/event-stream`; frames are `data: {json}\n\n` in order —
+    `{"thread_id": "…"}` (leading), then `{"delta": "…"}` text chunks, then
+    `{"done": true}`. **Citations are inline in the `delta` markdown** (the generate
+    prompt tells the model to "cite specific file paths and line ranges"); there is **no
+    structured citation field**. This resolves the "Citation shape" open question — chips /
+    code-peek are deferred until the backend emits structured citations.
+  - `lib/types.ts`: `ChatRole`, `ChatMessage`, `ChatStreamFrame` (union of the three frames).
+  - `lib/api.ts`: `chatStream({repo,message,thread_id})` returns the **raw streaming
+    `Response`** (not parsed JSON like `request`) so the proxy can pipe the body through
+    unbuffered (invariant #4); Bearer auth added server-side like every other call.
+  - `app/api/repos/[owner]/[repo]/chat/route.ts`: same-origin streaming proxy (proxy
+    method, like the index routes) — validates the body, forwards to the backend via
+    `chatStream`, and returns `new Response(upstream.body, …)` with `text/event-stream`.
+  - `hooks/use-chat-stream.ts`: client SSE consumer via `fetch` + `ReadableStream` reader
+    (never `EventSource`); buffers partial frames across reads (`\n\n` split); persists
+    `thread_id` in `localStorage` (`revet:thread:<full_name>`) for cross-reload continuity;
+    `send`/`stop` (AbortController)/`newThread`; `401` → `/`.
+  - Components: `components/chat-message.tsx` (pure bubble — user chip right, assistant
+    full-width `whitespace-pre-wrap` + streaming cursor), `components/chat-composer.tsx`
+    (auto-grow `<textarea>`, Enter sends / Shift+Enter newline, Stop mid-stream, disabled
+    until indexed), `components/chat-panel.tsx` (client island: message list + auto-scroll,
+    empty-state example prompts, "index first" banner when status ≠ COMPLETED, New thread).
+  - `app/repos/[owner]/[repo]/chat/page.tsx`: server shell — fetches index status via
+    `getIndexStatus` to gate the composer (degrades to `NOT_STARTED` on error), renders
+    `ChatPanel`. Replaces the Phase 3 placeholder.
+  - Gates: `pnpm typecheck`, `pnpm build` pass; `pnpm lint` clean except the pre-existing
+    `Geist_Mono` scaffold warning; `pnpm format` applied. Ran `next typegen` after adding
+    the route handler so `RouteContext` resolves.
 
 - **Phase 4 (partial) — Repo list as cards** (2026-06-28)
   - `components/repo-card.tsx` (client island) replaces `repo-row.tsx`: shadcn `Card`
@@ -151,19 +182,17 @@ Phase 3 — Chat.
 
 ## In Progress
 
-- **Phase 3 — Chat.** Workspace shell + nav done (see Completed); next is the streaming
-  chat UI inside `…/chat`.
+- Nothing in flight. Phase 3 (Chat) is complete end-to-end; Phase 4 (Polish) is next.
 
 ## Next Up
 
-1. **Phase 3 — Chat.** `/repos/[owner]/[repo]/chat` chat page (shell + nav now in place); `use-chat-stream` consuming the
-   backend `/chat` SSE-over-POST via `fetch`/`ReadableStream`; message list + composer;
-   per-repo `thread_id` in localStorage; grounded-citation rendering. Client→backend auth
-   reuses the **proxy method** from Phase 2 (a same-origin `/api/chat` Route Handler that
-   streams the backend response through with the Bearer header). Confirm the SSE frame and
-   citation shape against `revet_be`.
-2. **Phase 4 — Polish** (loading/error/empty consistency, theme toggle, responsive,
-   accessibility, refined switcher).
+1. **Phase 4 — Polish** (loading/error/empty consistency, theme toggle, responsive,
+   accessibility pass, refined installation switcher).
+2. **Rich answer rendering (deferred from Phase 3).** Assistant text currently renders as
+   `whitespace-pre-wrap` plain text — faithful to the inline-citation stream but no
+   markdown/code-block formatting. Adding a markdown renderer is a **dependency**; raise it
+   here before adding (workflow rule). Structured citation **chips + code-peek panel**
+   (architecture §Chat page) wait on the backend emitting a structured citation field.
 
 ## Open Questions / Pending Decisions
 
@@ -186,10 +215,14 @@ Phase 3 — Chat.
   repos with stored `Repository` rows; `?refresh=1` re-pulls. `Repository` =
   `{ full_name, indexing_status }`. Caveat: index/index-status 404 without a stored row
   (webhook-created) — accepted, handled via ngrok webhook forwarding in dev.
-- **Citation shape.** Confirm how the backend `/chat` stream surfaces grounded citations
-  (inline in text vs. a structured field) so the chat UI can render them.
-- **`thread_id` scheme.** Generation (client UUID) + per-repo localStorage persistence —
-  proposed in `architecture.md` §State; confirm against backend chat-memory-key needs.
+- ~~**Citation shape.**~~ **Resolved (inline).** The `/chat` stream emits only
+  `thread_id`/`delta`/`done`; citations are **inline in the `delta` markdown** (the model
+  is prompted to cite file paths + line ranges), not a structured field. The chat UI
+  renders assistant text verbatim. Structured chips/code-peek are deferred until the
+  backend surfaces a structured citation field.
+- ~~**`thread_id` scheme.**~~ **Resolved & wired.** The **backend** mints the `thread_id`
+  (returns it in the leading SSE frame); the client persists it per-repo in localStorage
+  (`revet:thread:<full_name>`) and replays it on the next turn. New thread = clear the key.
 
 ## Architecture Decisions
 

@@ -92,11 +92,7 @@ export function RepoCard({
             disabled={pending || isIndexing}
           >
             {isIndexing ? <LoaderCircle className="animate-spin" /> : null}
-            {isIndexing
-              ? "Indexing…"
-              : status === "FAILED"
-                ? "Retry"
-                : "Index"}
+            {isIndexing ? "Indexing…" : status === "FAILED" ? "Retry" : "Index"}
           </Button>
         )}
       </CardFooter>

@@ -38,3 +38,19 @@ export type IndexStatusResponse = {
   indexing_status: IndexingStatus
   chunk_count: number
 }
+
+export type ChatRole = "user" | "assistant"
+
+export type ChatMessage = {
+  id: string
+  role: ChatRole
+  content: string
+}
+
+// Frames the backend `/chat` SSE stream emits as `data: {...}` lines: a leading
+// `thread_id` (the conversation key), `delta` text chunks, then a terminal `done`.
+// Citations are inline in the `delta` text, not a structured field.
+export type ChatStreamFrame =
+  | { thread_id: string }
+  | { delta: string }
+  | { done: true }

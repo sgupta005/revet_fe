@@ -146,3 +146,24 @@ export function getIndexStatus(
     redirectOnAuthError: false,
   })
 }
+
+// POST /chat — stream a grounded answer as SSE. Returns the raw streaming
+// `Response` (not parsed JSON like `request`) so the proxy Route Handler can pipe
+// the body straight through to the browser unbuffered (invariant #4). Bearer auth
+// is added server-side exactly like every other call.
+export async function chatStream(body: {
+  repo: string
+  message: string
+  thread_id?: string
+}): Promise<Response> {
+  return fetch(`${baseUrl()}/chat`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      ...(await serverAuthHeader()),
+    },
+    body: JSON.stringify(body),
+    credentials: "include",
+    cache: "no-store",
+  })
+}
