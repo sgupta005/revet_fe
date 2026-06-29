@@ -54,7 +54,7 @@ export default async function RepoWorkspaceLayout({
           </SidebarHeader>
 
           <SidebarContent>
-            <WorkspaceNav basePath={basePath} />
+            <WorkspaceNav basePath={basePath} fullName={`${owner}/${repo}`} />
           </SidebarContent>
         </Sidebar>
 

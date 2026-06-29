@@ -12,6 +12,32 @@ Phase 4 — Polish.
 
 ## Completed
 
+- **Phase 6 (frontend) — Chat History** (2026-06-29)
+  - **URL scheme:** `?thread={uuid}` loads a specific thread, `?thread=new` starts a
+    blank conversation (skips auto-load), no param auto-loads the most recent thread from
+    the API (falls back to localStorage, then API `/chat/threads` list, then blank).
+  - `lib/types.ts`: added `ChatThread` type `{thread_id, title, created_at, updated_at}`.
+  - `lib/api.ts`: added `getThreads(owner, repo)` and `getThreadMessages(threadId)` —
+    same auth pattern as other credentialed server-side calls.
+  - `app/api/repos/[owner]/[repo]/chat/threads/route.ts`: GET proxy → `getThreads`.
+  - `app/api/chat/threads/[threadId]/route.ts`: GET proxy → `getThreadMessages`.
+  - `hooks/use-chat-stream.ts`: added `initialThreadId` param; history loading
+    (`loadHistory` via `/api/chat/threads/{id}`); `loadingHistory` state; `newThread()`
+    now navigates to `?thread=new`; after the leading SSE `thread_id` frame on a new
+    thread, calls `router.replace('?thread={id}')` to canonicalise the URL and trigger
+    sidebar refresh.
+  - `components/workspace-nav.tsx`: added `fullName` prop; when the active segment is
+    `chat`, shows a chevron toggle to the right of the Chat label; expanded list fetches
+    threads and re-fetches on `activeThreadId` change; max-h-48 scrollable thread list
+    with "New thread" button at top, skeleton rows while loading, and per-thread title +
+    relative time; active thread highlighted.
+  - `app/repos/[owner]/[repo]/layout.tsx`: passes `fullName` to `WorkspaceNav`.
+  - `app/repos/[owner]/[repo]/chat/page.tsx`: reads `searchParams.thread` (Next 16 async
+    pattern) and passes as `initialThreadId` to `ChatPanel`.
+  - `components/chat-panel.tsx`: accepts `initialThreadId`, shows skeleton while
+    `loadingHistory`, uncommented "New Thread" header button.
+  - Gates: `pnpm typecheck`, `pnpm lint` (0 errors, 2 pre-existing warnings), `pnpm build` pass.
+
 - **Phase 3 (complete) — Streaming chat** (2026-06-28)
   - **Confirmed the backend `/chat` SSE contract** against `revet_be/app/chat.py`: a POST
     returning `text/event-stream`; frames are `data: {json}\n\n` in order —
@@ -182,7 +208,9 @@ Phase 4 — Polish.
 
 ## In Progress
 
-- Nothing in flight. Phase 3 (Chat) is complete end-to-end; Phase 4 (Polish) is next.
+- **Phase 6 (partial) — Chat History frontend** (2026-06-29)
+  - Awaiting backend Phase 6 (ChatThread DB model + new endpoints) to be fully testable end-to-end.
+  - Frontend changes are complete and build cleanly; see Completed below.
 
 ## Next Up
 

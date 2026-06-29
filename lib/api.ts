@@ -5,6 +5,8 @@
 
 import { SESSION_COOKIE } from "@/lib/session"
 import type {
+  ChatRole,
+  ChatThread,
   CreateSessionResponse,
   IndexStatusResponse,
   Me,
@@ -145,6 +147,29 @@ export function getIndexStatus(
   return request<IndexStatusResponse>(`/repos/${owner}/${repo}/index-status`, {
     redirectOnAuthError: false,
   })
+}
+
+// GET /repos/{owner}/{repo}/chat/threads — list the authed user's threads for a
+// repo, ordered by updated_at desc. Used server-side (chat/page.tsx) and by the
+// proxy Route Handler for client calls from WorkspaceNav.
+export function getThreads(
+  owner: string,
+  repo: string
+): Promise<ChatThread[]> {
+  return request<ChatThread[]>(`/repos/${owner}/${repo}/chat/threads`, {
+    redirectOnAuthError: false,
+  })
+}
+
+// GET /chat/threads/{thread_id} — fetch full message history for a thread.
+// Used by the proxy Route Handler; the client calls the proxy, never this directly.
+export function getThreadMessages(
+  threadId: string
+): Promise<Array<{ role: ChatRole; content: string }>> {
+  return request<Array<{ role: ChatRole; content: string }>>(
+    `/chat/threads/${threadId}`,
+    { redirectOnAuthError: false }
+  )
 }
 
 // POST /chat — stream a grounded answer as SSE. Returns the raw streaming

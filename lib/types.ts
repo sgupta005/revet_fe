@@ -47,6 +47,13 @@ export type ChatMessage = {
   content: string
 }
 
+export type ChatThread = {
+  thread_id: string
+  title: string
+  created_at: string
+  updated_at: string
+}
+
 // Frames the backend `/chat` SSE stream emits as `data: {...}` lines: a leading
 // `thread_id` (the conversation key), `delta` text chunks, then a terminal `done`.
 // Citations are inline in the `delta` text, not a structured field.
