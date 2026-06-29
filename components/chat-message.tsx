@@ -1,9 +1,9 @@
 import type { ChatMessage as ChatMessageType } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { MarkdownContent } from "@/components/markdown-content"
 
 // Pure message row. User turns are right-aligned chips; assistant turns are full
-// width with `whitespace-pre-wrap` so the model's inline citations (path · line
-// range) and code keep their formatting. A blinking cursor marks the live turn.
+// width with rendered markdown. A blinking cursor marks the live turn.
 export function ChatMessage({
   message,
   streaming = false,
@@ -17,15 +17,21 @@ export function ChatMessage({
     <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
       <div
         className={cn(
-          "max-w-[85%] text-sm leading-relaxed break-words whitespace-pre-wrap",
+          "max-w-[85%] text-sm leading-relaxed break-words",
           isUser
-            ? "rounded-none border border-border bg-muted px-3 py-2"
+            ? "rounded-none border border-border bg-muted px-3 py-2 whitespace-pre-wrap"
             : "w-full"
         )}
       >
-        {message.content}
-        {streaming && (
-          <span className="ml-0.5 inline-block h-4 w-1.5 translate-y-0.5 animate-pulse bg-primary" />
+        {isUser ? (
+          <>
+            {message.content}
+            {streaming && (
+              <span className="ml-0.5 inline-block h-4 w-1.5 translate-y-0.5 animate-pulse bg-primary" />
+            )}
+          </>
+        ) : (
+          <MarkdownContent content={message.content} streaming={streaming} />
         )}
       </div>
     </div>
