@@ -37,7 +37,7 @@ export default async function RepoWorkspaceLayout({
 
   return (
     <TooltipProvider>
-      <SidebarProvider defaultOpen={sidebarOpen}>
+      <SidebarProvider defaultOpen={sidebarOpen} className="h-dvh">
         <Sidebar collapsible="icon">
           <SidebarHeader>
             <SidebarMenu>

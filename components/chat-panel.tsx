@@ -36,7 +36,7 @@ export function ChatPanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {messages.length > 0 && (
+      {/* {messages.length > 0 && (
         <div className="flex shrink-0 justify-end border-b border-border px-4 py-2">
           <Button
             variant="ghost"
@@ -48,7 +48,7 @@ export function ChatPanel({
             New thread
           </Button>
         </div>
-      )}
+      )} */}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6">
