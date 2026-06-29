@@ -17,10 +17,10 @@ export function ChatMessage({
     <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
       <div
         className={cn(
-          "max-w-[85%] text-sm leading-relaxed break-words",
+          "text-sm leading-relaxed break-words",
           isUser
-            ? "rounded-none border border-border bg-muted px-3 py-2 whitespace-pre-wrap"
-            : "w-full"
+            ? "max-w-[85%] :rounded-none border border-border bg-muted px-3 py-2 whitespace-pre-wrap"
+            : "w-full sm:max-w-[85%] pl-2 sm:pl-0"
         )}
       >
         {isUser ? (
