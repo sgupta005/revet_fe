@@ -46,9 +46,9 @@ const TOOLS: Tool[] = [
   { segment: "chat", label: "Chat", icon: MessageSquare, available: true },
   {
     segment: "pulls",
-    label: "PR Review",
+    label: "Reviews",
     icon: GitPullRequest,
-    available: false,
+    available: true,
   },
   { segment: "issues", label: "Issues", icon: CircleDot, available: false },
   { segment: "rules", label: "Rules", icon: ListChecks, available: false },

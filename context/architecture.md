@@ -48,7 +48,8 @@ app/
       layout.tsx          #   workspace shell: sidebar tool nav + repo header (Server Component)
       page.tsx            #   redirects to ./chat (workspace opens on Chat)
       chat/page.tsx       #   F3 chat (server shell + client chat island)
-      pulls/ issues/ rules/  #   FUTURE tools — sibling routes, added as features land
+      pulls/page.tsx      #   "Reviews" — read-only PR-review activity feed (Server Component)
+      issues/ rules/      #   FUTURE tools — sibling routes, added as features land
   api/                    # same-origin proxy Route Handlers for CLIENT→backend calls
     repos/[owner]/[repo]/
       index/route.ts        #   POST → backend index (forwards session as Bearer)
@@ -116,7 +117,21 @@ all monospace (`font-mono` on `html`), dark-default, emerald/green primary, **sh
   static `TOOLS` list; each tool has an `available` flag. Unbuilt tools render **disabled
   with a "Soon" badge** (roadmap visible, non-blocking); shipping one = flip `available` and
   create `app/repos/[owner]/[repo]/<segment>/page.tsx`. **No nav/layout rework.** Active tool
-  is derived with `useSelectedLayoutSegment()`.
+  is derived with `useSelectedLayoutSegment()`. Chat and **Reviews** (`pulls`) are built;
+  Issues and Rules remain "Soon".
+
+### Reviews tool (`…/pulls`)
+- A **read-only activity feed** of the PRs Revet has reviewed for the repo — *not* an in-app
+  rebuild of the review. The actual review is posted on the GitHub PR (where developers read
+  it); each row deep-links there ("View on GitHub"). This is the deliberate "keep it simple"
+  choice: the web surface adds **visibility that the agent is working**, not a second review UI.
+- Pure Server Component (`pulls/page.tsx`): reads the session cookie, fetches
+  `GET /repos/{owner}/{repo}/pulls` via `lib/api.ts` (`getPullReviews`), renders a list
+  (PR #, GitHub state badge, relative time, GitHub link). No client JS, no polling, **no proxy
+  Route Handler** — a fetch failure (repo not installed / no access) degrades to the empty state.
+- The backend row stores no findings or PR title, so the feed is intentionally minimal.
+  A richer in-app view (rendering findings/severity, CodeRabbit-style) would require the
+  backend to persist the rendered review body/findings — **deferred** (duplicates GitHub).
 - The shell `layout.tsx` is a Server Component (`requireSession`); sidebar
   expanded/collapsed state persists via the `sidebar_state` cookie (read server-side for
   `defaultOpen`). It's wrapped in `TooltipProvider` (the sidebar's `SidebarProvider` does
@@ -215,6 +230,7 @@ indicative — finalize with the backend.
 | `POST` | `/repos/{owner}/{repo}/index` | Enqueue (re)indexing | **Session-gated.** Enqueues the existing `index_repo` task |
 | `GET`  | `/repos/{owner}/{repo}/index-status` | Read current `indexing_status` (+ counts) | **Session-gated.** May fold into the repositories list |
 | `POST` | `/chat` | Stream a grounded answer (SSE) | **Exists & wired (Phase 3).** Session-gated. Body `{repo, message, thread_id?}`; returns `text/event-stream`, frames `data:{json}` — `{thread_id}` (leading), `{delta}` chunks, `{done:true}`. Citations are **inline in `delta`**, no structured field |
+| `GET`  | `/repos/{owner}/{repo}/pulls` | List PRs Revet has reviewed (Reviews feed) | **Session-gated, ownership-checked.** Returns `[{pr_number, state, github_url, created_at, updated_at}]`, `updated_at` desc. Read-only — the review body lives on the GitHub PR (`github_url`); no findings/title are stored |
 
 Cross-cutting backend requirements:
 - **CORS** must allow the frontend origin **with credentials** (cookies).

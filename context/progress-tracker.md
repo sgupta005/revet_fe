@@ -12,6 +12,23 @@ Phase 4 — Polish.
 
 ## Completed
 
+- **Reviews tool — PR-review activity feed** (2026-07-01)
+  - Decision: don't rebuild GitHub's PR review UI in-app and don't go CodeRabbit-complex —
+    the review is GitHub-native; the web surface adds *visibility that the agent ran*. So the
+    "PR Review" nav placeholder becomes a thin, read-only **"Reviews"** feed.
+  - `components/workspace-nav.tsx`: `pulls` tool flipped `available: true`, relabeled
+    "PR Review" → "Reviews" (dropped the "Soon" badge).
+  - `app/repos/[owner]/[repo]/pulls/page.tsx`: Server Component fetching
+    `getPullReviews(owner, repo)`; renders a list (PR #, GitHub state badge, relative time,
+    "View on GitHub" deep-link) with an empty state. No client JS / polling / proxy handler;
+    a fetch failure degrades to empty. Matches the base-lyra aesthetic (sharp corners, mono).
+  - `lib/types.ts`: `PullReview` type. `lib/api.ts`: `getPullReviews()` (server fetch,
+    forwards the session as Bearer like the other reads).
+  - Backend dependency (built in tandem): `GET /repos/{owner}/{repo}/pulls` — access-checked
+    list of `kind=review` PR rows + constructed `github_url`. No new persistence.
+  - Deferred: in-app rendering of findings/severity (needs the backend to persist the review
+    body/findings); proxy handler + polling (only if a live-refresh feed is wanted later).
+
 - **Phase 6 (frontend) — Chat History** (2026-06-29)
   - **URL scheme:** `?thread={uuid}` loads a specific thread, `?thread=new` starts a
     blank conversation (skips auto-load), no param auto-loads the most recent thread from

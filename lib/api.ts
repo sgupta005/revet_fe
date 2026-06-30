@@ -10,6 +10,7 @@ import type {
   CreateSessionResponse,
   IndexStatusResponse,
   Me,
+  PullReview,
   Repository,
 } from "@/lib/types"
 
@@ -159,6 +160,15 @@ export function getThreads(
   return request<ChatThread[]>(`/repos/${owner}/${repo}/chat/threads`, {
     redirectOnAuthError: false,
   })
+}
+
+// GET /repos/{owner}/{repo}/pulls — the PRs Revet has reviewed for a repo, most
+// recent first. Read-only activity feed; rendered server-side (pulls/page.tsx).
+export function getPullReviews(
+  owner: string,
+  repo: string
+): Promise<PullReview[]> {
+  return request<PullReview[]>(`/repos/${owner}/${repo}/pulls`)
 }
 
 // GET /chat/threads/{thread_id} — fetch full message history for a thread.

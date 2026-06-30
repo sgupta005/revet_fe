@@ -102,10 +102,13 @@ accounts system — giving real identity and per-user access control from day on
 ## 6. Out of scope (v1)
 
 - Passwords, email/password accounts, or any identity provider other than GitHub.
-- UIs for PR review, issue analysis, auto-PR, custom rules (backend features without a
-  frontend surface yet). When added, each is a **tool in the per-repo workspace** (a sibling
-  route under `/repos/[owner]/[repo]/`), not a redesign — see `architecture.md`
-  §UI surfaces & workspace model.
+- UIs for issue analysis, auto-PR, custom rules (backend features without a frontend surface
+  yet). When added, each is a **tool in the per-repo workspace** (a sibling route under
+  `/repos/[owner]/[repo]/`), not a redesign — see `architecture.md` §UI surfaces & workspace
+  model. **PR review now has a thin surface** — a read-only "Reviews" activity feed
+  (`…/pulls`) that lists reviewed PRs and deep-links to each review on GitHub; the review
+  itself stays GitHub-native. An in-app rendering of findings (CodeRabbit-style) remains out
+  of scope until the backend persists review bodies/findings.
 - Billing, org/team management, fine-grained RBAC beyond per-installation access checks.
 - Any data persistence the frontend owns beyond the session cookie and thread ids.
 

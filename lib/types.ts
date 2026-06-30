@@ -54,6 +54,17 @@ export type ChatThread = {
   updated_at: string
 }
 
+// A PR Revet has reviewed, surfaced in the read-only "Reviews" activity feed.
+// The review itself lives on the GitHub PR (`github_url`); the backend stores only
+// the activity row (no findings/title) — see `context/architecture.md`.
+export type PullReview = {
+  pr_number: number
+  state: string
+  github_url: string
+  created_at: string
+  updated_at: string
+}
+
 // Frames the backend `/chat` SSE stream emits as `data: {...}` lines: a leading
 // `thread_id` (the conversation key), `delta` text chunks, then a terminal `done`.
 // Citations are inline in the `delta` text, not a structured field.
