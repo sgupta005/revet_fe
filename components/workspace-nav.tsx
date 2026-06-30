@@ -145,7 +145,11 @@ export function WorkspaceNav({
                         <SidebarMenuSubItem key={t.thread_id}>
                           <SidebarMenuSubButton
                             isActive={activeThreadId === t.thread_id}
-                            render={<Link href={`?thread=${t.thread_id}`} />}
+                            render={
+                              <Link
+                                href={`${basePath}/chat?thread=${t.thread_id}`}
+                              />
+                            }
                           >
                             <span className="flex-1 truncate">{t.title}</span>
                             <span className="ml-auto shrink-0 text-[10px] opacity-60">
