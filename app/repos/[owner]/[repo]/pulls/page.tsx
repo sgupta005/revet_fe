@@ -2,6 +2,13 @@ import { ExternalLink, GitPullRequest } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty"
 import { getPullReviews } from "@/lib/api"
 import type { PullReview } from "@/lib/types"
 import { cn, relativeTime } from "@/lib/utils"
@@ -39,14 +46,18 @@ export default async function PullsPage({
       </div>
 
       {reviews.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-2 border border-dashed border-border py-16 text-center">
-          <GitPullRequest className="h-6 w-6 text-muted-foreground" />
-          <p className="text-sm font-medium">No reviews yet</p>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            Revet hasn&apos;t reviewed any pull requests in this repository yet.
-            Open a PR and the review will appear here.
-          </p>
-        </div>
+        <Empty className="border">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <GitPullRequest />
+            </EmptyMedia>
+            <EmptyTitle>No reviews yet</EmptyTitle>
+            <EmptyDescription>
+              Revet hasn&apos;t reviewed any pull requests in this repository
+              yet. Open a PR and the review will appear.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <ul className="divide-y divide-border border border-border">
           {reviews.map((r) => (
