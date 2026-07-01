@@ -118,7 +118,8 @@ all monospace (`font-mono` on `html`), dark-default, emerald/green primary, **sh
   with a "Soon" badge** (roadmap visible, non-blocking); shipping one = flip `available` and
   create `app/repos/[owner]/[repo]/<segment>/page.tsx`. **No nav/layout rework.** Active tool
   is derived with `useSelectedLayoutSegment()`. Chat and **Reviews** (`pulls`) are built;
-  Issues and Rules remain "Soon".
+  **Issues** (read-only feed) and **Rules** (per-repo CRUD tool — see tracker "Planned
+  frontend surfaces") are the next tools to ship; the rest remain "Soon".
 
 ### Reviews tool (`…/pulls`)
 - A **read-only activity feed** of the PRs Revet has reviewed for the repo — *not* an in-app

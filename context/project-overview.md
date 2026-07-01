@@ -54,7 +54,10 @@ GitHub OAuth (no passwords, no separate accounts system).
 - "Index" / "Re-index" action triggers a session-gated backend job; UI polls and
   reflects status.
 - Empty state ("app not installed for you yet" / few repos) links the user to install or
-  expand repo access on GitHub.
+  expand repo access on GitHub. *(Planned, backend Phase 13: add/remove repos in-app for
+  existing "selected repositories" installations, with the GitHub redirect kept as the
+  fallback for first-time install / all-repos mode — see the tracker's "Planned frontend
+  surfaces".)*
 
 ### F3 — Chat with Codebase — **Priority 1**
 - Per-repo chat page. Messages stream over SSE from the (session-gated) backend `/chat`
@@ -79,7 +82,12 @@ GitHub OAuth (no passwords, no separate accounts system).
 ### Out of scope (v1)
 - Passwords, email/password accounts, or any identity provider other than GitHub.
 - PR review, issue analysis, auto-PR, and custom-rules UIs (backend features that
-  don't yet need a frontend surface — add later).
+  don't yet need a frontend surface — add later). *Being added incrementally:* the
+  **Reviews** feed shipped (backend Phase 7) and an **Issues** feed is planned (backend
+  Phase 8), both thin read-only activity feeds; a **Rules** tool (per-repo custom-rule
+  CRUD, backend Phase 11) is planned as an interactive tool before Polish — see the
+  tracker's "Planned frontend surfaces". Rich in-app rendering of PR-review findings /
+  issue-analysis bodies stays out of scope until the backend persists those bodies.
 - Billing, org/team management, fine-grained RBAC beyond per-installation access checks.
 - Server-side persistence owned by the frontend (the frontend stores no data of its
   own beyond the opaque session cookie and per-repo `thread_id`s; user/refresh tokens

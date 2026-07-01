@@ -231,13 +231,82 @@ Phase 4 — Polish.
 
 ## Next Up
 
-1. **Phase 4 — Polish** (loading/error/empty consistency, theme toggle, responsive,
+1. **Phase 8 (frontend) — Issues activity feed** (near-term; tracks backend Phase 8 —
+   Issue Analysis). See "Planned frontend surfaces" below.
+2. **Phase 11 (frontend) — Rules CRUD UI** (before Polish; tracks backend Phase 11 —
+   Custom Rules CRUD API). See "Planned frontend surfaces" below.
+3. **Phase 4 — Polish** (loading/error/empty consistency, theme toggle, responsive,
    accessibility pass, refined installation switcher).
-2. **Rich answer rendering (deferred from Phase 3).** Assistant text currently renders as
+4. **Rich answer rendering (deferred from Phase 3).** Assistant text currently renders as
    `whitespace-pre-wrap` plain text — faithful to the inline-citation stream but no
    markdown/code-block formatting. Adding a markdown renderer is a **dependency**; raise it
    here before adding (workflow rule). Structured citation **chips + code-peek panel**
    (architecture §Chat page) wait on the backend emitting a structured citation field.
+5. **Phase 14 (frontend) — Install / uninstall repos from the repos page** (post-v1;
+   tracks backend Phase 14). See "Planned frontend surfaces" below.
+
+## Planned frontend surfaces (backend-driven)
+
+These are frontend counterparts to specific backend phases; labelled by their backend
+phase number to match the existing convention ("Phase 6 (frontend) — Chat History", the
+Reviews feed for backend Phase 7). Each waits on its backend dependency.
+
+- **Phase 8 (frontend) — Issues activity feed** *(tracks backend Phase 8 — Issue
+  Analysis; near-term)* — a thin, read-only **"Issues"** feed that mirrors the existing
+  **"Reviews"** feed exactly. The issue analysis itself is GitHub-native (the bot comments
+  on the issue); the web surface only adds *visibility that the agent ran*.
+  - `components/workspace-nav.tsx`: flip the disabled `issues` tool `available: true`,
+    drop its "Soon" badge (keep the "Issues" label).
+  - `app/repos/[owner]/[repo]/issues/page.tsx`: Server Component fetching
+    `getIssueAnalyses(owner, repo)`; renders a list (issue #, GitHub state badge, relative
+    time, "View on GitHub" deep-link) with an empty state. No client JS / polling / proxy;
+    a fetch failure degrades to empty. base-lyra aesthetic (sharp corners, mono).
+  - `lib/types.ts`: `IssueAnalysis` type. `lib/api.ts`: `getIssueAnalyses()` (server
+    fetch, forwards the session as Bearer like the other reads).
+  - **Backend dependency (cross-repo):** needs `GET /repos/{owner}/{repo}/issues` —
+    access-checked list of `Issue` activity rows + constructed `github_url` (the mirror of
+    `GET /repos/{owner}/{repo}/pulls`). This endpoint is **not** in backend Phase 8 as
+    currently scoped — flag it, exactly as the Reviews feed endpoint was added separately
+    after backend Phase 7.
+  - Deferred: in-app rendering of the analysis (suggested files / approach) — needs the
+    backend to persist the analysis body; polling / live refresh.
+
+- **Phase 11 (frontend) — Rules CRUD UI** *(tracks backend Phase 11 — Custom Rules CRUD
+  API; before Polish)* — a **per-repo** workspace tool to create/read/update/delete the
+  repo's custom review rules (the guidelines the bot enforces in PR review, issue analysis,
+  and auto-PR). Rules are **per-repo** (decision 2026-07-02; backend `Rule` moved to a
+  `repository_id` FK) — the existing per-repo "Rules" nav placeholder now matches the data
+  scope exactly, no cross-installation caveat needed.
+  - `components/workspace-nav.tsx`: flip the disabled `rules` tool `available: true`, drop
+    its "Soon" badge.
+  - `app/repos/[owner]/[repo]/rules/page.tsx`: server shell (`requireSession`) + a client
+    island for the CRUD form/list (create, inline edit, delete). This is a **mutating** tool,
+    so it needs same-origin proxy Route Handlers under `app/api/repos/[owner]/[repo]/rules/...`
+    (the proxy method — `httpOnly` cookie → Bearer), unlike the read-only Reviews/Issues feeds.
+  - `lib/types.ts`: `Rule` type `{id, content, created_at, updated_at}`. `lib/api.ts`:
+    `getRules` / `createRule` / `updateRule` / `deleteRule`.
+  - **Backend dependency:** backend Phase 11 endpoints (`GET`/`POST /repos/{owner}/{repo}/rules`,
+    `PUT`/`DELETE /repos/{owner}/{repo}/rules/{rule_id}`, access-checked).
+
+- **Phase 14 (frontend) — Install / uninstall repos from the repos page** *(tracks backend
+  Phase 14; post-v1)* — let the user add/remove repos directly from the repos page
+  (`/repos`, the post-sign-in home) instead of bouncing to GitHub each time. Today
+  `app/repos/page.tsx` only offers "Manage on GitHub" / "Refresh" / `installApp` links.
+  - Add a per-repo **Remove** action and an **Add repo** affordance on `app/repos/page.tsx`.
+    After add → reuse the existing index action to enqueue indexing; after remove → drop the
+    repo from the list.
+  - New `lib/api.ts` calls + same-origin proxy Route Handlers under `app/api/...` (the proxy
+    method, like the index routes) so the `httpOnly` cookie is forwarded to the backend as
+    Bearer. These wrap the backend Phase 13 endpoints (which call GitHub
+    `PUT`/`DELETE /user/installations/{id}/repositories/{repo_id}` via `call_with_refresh`).
+  - **Feasibility limits the UI must handle** (confirmed with backend): in-app add/remove
+    only works when the installation is in **"only selected repositories"** mode and the user
+    has admin access. Creating the **first** installation on an account, and switching an
+    installation between "all repos" ↔ "selected repos" mode, still require the GitHub
+    redirect. So: in-app add/remove for existing selected-repos installations, and fall back
+    to the existing "Manage on GitHub" / `installApp` links for first-time install / all-repos
+    installations.
+  - **Backend dependency (cross-repo):** backend Phase 14 endpoints (post-v1).
 
 ## Open Questions / Pending Decisions
 
