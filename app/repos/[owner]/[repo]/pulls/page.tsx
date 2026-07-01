@@ -61,10 +61,7 @@ export default async function PullsPage({
       ) : (
         <ul className="divide-y divide-border border border-border">
           {reviews.map((r) => (
-            <li
-              key={r.pr_number}
-              className="flex items-center gap-3 px-4 py-3"
-            >
+            <li key={r.pr_number} className="flex items-center gap-3 px-4 py-3">
               <span className="font-medium">#{r.pr_number}</span>
               {/* state-driven tone: open=primary, merged=muted primary, else neutral */}
               <Badge

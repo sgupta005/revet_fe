@@ -18,7 +18,8 @@ import { threadKey, useLoadHistory } from "@/hooks/use-load-history"
 //   - "new"      → blank state (user explicitly started a new conversation)
 //   - "<uuid>"   → load that thread's history
 export function useChatStream(fullName: string, initialThreadId?: string) {
-  const { messages, setMessages, loadingHistory, loadHistory } = useLoadHistory(fullName)
+  const { messages, setMessages, loadingHistory, loadHistory } =
+    useLoadHistory(fullName)
   const [streaming, setStreaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -76,7 +77,6 @@ export function useChatStream(fullName: string, initialThreadId?: string) {
         // Silently degrade to blank state.
       }
     })()
-    
   }, [fullName, initialThreadId])
 
   const send = useCallback(

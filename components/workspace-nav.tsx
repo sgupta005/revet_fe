@@ -51,9 +51,8 @@ const TOOLS: Tool[] = [
     available: true,
   },
   { segment: "issues", label: "Issues", icon: CircleDot, available: true },
-  { segment: "rules", label: "Rules", icon: ListChecks, available: false },
+  { segment: "rules", label: "Rules", icon: ListChecks, available: true },
 ]
-
 
 export function WorkspaceNav({
   basePath,
@@ -130,7 +129,10 @@ export function WorkspaceNav({
                   <CollapsibleTrigger
                     render={
                       <SidebarMenuButton
-                        isActive={segment === tool.segment && (!activeThreadId || activeThreadId === "new")}
+                        isActive={
+                          segment === tool.segment &&
+                          (!activeThreadId || activeThreadId === "new")
+                        }
                         tooltip={tool.label}
                       />
                     }

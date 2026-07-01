@@ -23,9 +23,16 @@ export function useLoadHistory(fullName: string) {
           return
         }
         if (!res.ok) return
-        const raw = (await res.json()) as Array<{ role: ChatRole; content: string }>
+        const raw = (await res.json()) as Array<{
+          role: ChatRole
+          content: string
+        }>
         setMessages(
-          raw.map((m) => ({ id: crypto.randomUUID(), role: m.role, content: m.content }))
+          raw.map((m) => ({
+            id: crypto.randomUUID(),
+            role: m.role,
+            content: m.content,
+          }))
         )
         localStorage.setItem(threadKey(fullName), threadId)
       } catch {

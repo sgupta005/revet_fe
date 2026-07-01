@@ -18,21 +18,21 @@ export function MarkdownContent({
           },
           h1({ children }) {
             return (
-              <h1 className="mb-3 mt-5 text-base font-semibold first:mt-0">
+              <h1 className="mt-5 mb-3 text-base font-semibold first:mt-0">
                 {children}
               </h1>
             )
           },
           h2({ children }) {
             return (
-              <h2 className="mb-2 mt-4 text-sm font-semibold first:mt-0">
+              <h2 className="mt-4 mb-2 text-sm font-semibold first:mt-0">
                 {children}
               </h2>
             )
           },
           h3({ children }) {
             return (
-              <h3 className="mb-2 mt-3 text-sm font-semibold first:mt-0">
+              <h3 className="mt-3 mb-2 text-sm font-semibold first:mt-0">
                 {children}
               </h3>
             )
@@ -58,7 +58,8 @@ export function MarkdownContent({
             const lang = className?.replace("language-", "") ?? ""
             // Fenced blocks with no language have no className but do have newlines
             const content = String(children)
-            const isBlock = className?.startsWith("language-") || content.includes("\n")
+            const isBlock =
+              className?.startsWith("language-") || content.includes("\n")
             if (isBlock) {
               return (
                 <div className="mb-3 last:mb-0">

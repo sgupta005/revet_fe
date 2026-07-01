@@ -13,6 +13,7 @@ import type {
   Me,
   PullReview,
   Repository,
+  Rule,
 } from "@/lib/types"
 
 function baseUrl(): string {
@@ -154,10 +155,7 @@ export function getIndexStatus(
 // GET /repos/{owner}/{repo}/chat/threads — list the authed user's threads for a
 // repo, ordered by updated_at desc. Used server-side (chat/page.tsx) and by the
 // proxy Route Handler for client calls from WorkspaceNav.
-export function getThreads(
-  owner: string,
-  repo: string
-): Promise<ChatThread[]> {
+export function getThreads(owner: string, repo: string): Promise<ChatThread[]> {
   return request<ChatThread[]>(`/repos/${owner}/${repo}/chat/threads`, {
     redirectOnAuthError: false,
   })
@@ -180,6 +178,51 @@ export function getIssueAnalyses(
   repo: string
 ): Promise<IssueAnalysis[]> {
   return request<IssueAnalysis[]>(`/repos/${owner}/${repo}/issues`)
+}
+
+// Custom-rules CRUD (Phase 11). All go through same-origin proxy Route Handlers
+// (mutating tool → httpOnly cookie forwarded as Bearer), so they surface a 401
+// rather than redirecting an XHR.
+export function getRules(owner: string, repo: string): Promise<Rule[]> {
+  return request<Rule[]>(`/repos/${owner}/${repo}/rules`, {
+    redirectOnAuthError: false,
+  })
+}
+
+export function createRule(
+  owner: string,
+  repo: string,
+  input: { name: string; body: string }
+): Promise<Rule> {
+  return request<Rule>(`/repos/${owner}/${repo}/rules`, {
+    method: "POST",
+    body: input,
+    redirectOnAuthError: false,
+  })
+}
+
+export function updateRule(
+  owner: string,
+  repo: string,
+  ruleId: number,
+  input: { name: string; body: string }
+): Promise<Rule> {
+  return request<Rule>(`/repos/${owner}/${repo}/rules/${ruleId}`, {
+    method: "PUT",
+    body: input,
+    redirectOnAuthError: false,
+  })
+}
+
+export function deleteRule(
+  owner: string,
+  repo: string,
+  ruleId: number
+): Promise<void> {
+  return request<void>(`/repos/${owner}/${repo}/rules/${ruleId}`, {
+    method: "DELETE",
+    redirectOnAuthError: false,
+  })
 }
 
 // GET /chat/threads/{thread_id} — fetch full message history for a thread.
