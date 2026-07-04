@@ -12,6 +12,26 @@ Phase 4 — Polish.
 
 ## Completed
 
+- **Phase 8 (frontend) — Issues activity feed** (2026-07-02)
+  - Mirrors the "Reviews" feed exactly (the issue analysis is GitHub-native — the bot
+    comments on the issue; this surface only shows *that the agent ran*).
+  - `components/workspace-nav.tsx`: `issues` tool flipped `available: true` (drops the
+    "Soon" badge; keeps the "Issues" label + `CircleDot` icon).
+  - `app/repos/[owner]/[repo]/issues/page.tsx`: Server Component fetching
+    `getIssueAnalyses(owner, repo)`; renders a list (issue #, GitHub state badge,
+    relative time, "View on GitHub" deep-link) with a shadcn `Empty` empty state. No
+    client JS / polling / proxy; a fetch failure degrades to empty. base-lyra aesthetic.
+  - `lib/types.ts`: `IssueAnalysis` type. `lib/api.ts`: `getIssueAnalyses()` (server
+    fetch, forwards the session as Bearer like the other reads).
+  - Backend dependency (built in tandem, `revet_be` Phase 8 PR): `GET
+    /repos/{owner}/{repo}/issues` — access-checked list of `Issue` activity rows +
+    constructed `github_url`.
+  - Gates: `pnpm typecheck` clean; `pnpm build` passes (route `…/issues` registered).
+    `pnpm lint` has **1 pre-existing error + 3 warnings in `hooks/use-chat-stream.ts`**
+    (confirmed present on `main`, unrelated to this change — my diff touches only
+    `workspace-nav.tsx`, `lib/api.ts`, `lib/types.ts`, and the new `issues/page.tsx`).
+    Flagged for a separate fix; not addressed here to keep the PR scoped.
+
 - **Reviews tool — PR-review activity feed** (2026-07-01)
   - Decision: don't rebuild GitHub's PR review UI in-app and don't go CodeRabbit-complex —
     the review is GitHub-native; the web surface adds *visibility that the agent ran*. So the

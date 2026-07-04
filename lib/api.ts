@@ -9,6 +9,7 @@ import type {
   ChatThread,
   CreateSessionResponse,
   IndexStatusResponse,
+  IssueAnalysis,
   Me,
   PullReview,
   Repository,
@@ -169,6 +170,16 @@ export function getPullReviews(
   repo: string
 ): Promise<PullReview[]> {
   return request<PullReview[]>(`/repos/${owner}/${repo}/pulls`)
+}
+
+// GET /repos/{owner}/{repo}/issues — the issues Revet has analyzed for a repo,
+// most recent first. Read-only activity feed; rendered server-side
+// (issues/page.tsx). Mirrors getPullReviews.
+export function getIssueAnalyses(
+  owner: string,
+  repo: string
+): Promise<IssueAnalysis[]> {
+  return request<IssueAnalysis[]>(`/repos/${owner}/${repo}/issues`)
 }
 
 // GET /chat/threads/{thread_id} — fetch full message history for a thread.

@@ -50,7 +50,7 @@ const TOOLS: Tool[] = [
     icon: GitPullRequest,
     available: true,
   },
-  { segment: "issues", label: "Issues", icon: CircleDot, available: false },
+  { segment: "issues", label: "Issues", icon: CircleDot, available: true },
   { segment: "rules", label: "Rules", icon: ListChecks, available: false },
 ]
 
