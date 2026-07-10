@@ -39,8 +39,7 @@ export default async function ChatPage({
     }
   }
 
-  const initialThreadId =
-    typeof thread === "string" ? thread : undefined
+  const initialThreadId = typeof thread === "string" ? thread : undefined
 
   let status: IndexingStatus = "NOT_STARTED"
   try {

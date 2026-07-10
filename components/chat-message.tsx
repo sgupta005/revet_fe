@@ -19,8 +19,8 @@ export function ChatMessage({
         className={cn(
           "text-sm leading-relaxed break-words",
           isUser
-            ? "max-w-[85%] :rounded-none border border-border bg-muted px-3 py-2 whitespace-pre-wrap"
-            : "w-full sm:max-w-[85%] pl-2 sm:pl-0"
+            ? ":rounded-none max-w-[85%] border border-border bg-muted px-3 py-2 whitespace-pre-wrap"
+            : "w-full pl-2 sm:max-w-[85%] sm:pl-0"
         )}
       >
         {isUser ? (

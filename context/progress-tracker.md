@@ -12,6 +12,31 @@ Phase 4 — Polish.
 
 ## Completed
 
+- **Phase 11 (frontend) — Rules CRUD UI** (2026-07-02)
+  - Per-repo Rules tool: create / inline-edit / delete the custom review rules the bot
+    enforces in PR review, issue analysis, and auto-PR. This is a **mutating** tool, so it
+    uses same-origin proxy Route Handlers (httpOnly cookie → Bearer), unlike the read-only
+    Reviews/Issues feeds.
+  - `components/workspace-nav.tsx`: `rules` tool flipped `available: true` (drops "Soon").
+  - `app/repos/[owner]/[repo]/rules/page.tsx`: server shell (`requireSession`) rendering the
+    client island.
+  - `components/rules-manager.tsx`: client island — list (skeleton while loading, shadcn
+    `Empty` when none), create form (name `Input` + native `textarea`), inline edit, delete;
+    all via the proxy; a `401` bounces to `/`. Errors surfaced inline.
+  - `app/api/repos/[owner]/[repo]/rules/route.ts` (GET list + POST create) and
+    `.../rules/[ruleId]/route.ts` (PUT update + DELETE) — proxy Route Handlers with minimal
+    body validation, returning the backend status (201/204/4xx) to the client.
+  - `lib/types.ts`: `Rule` type `{id, name, body, created_at, updated_at}` (matches backend
+    `RuleOut` — name+body, not the earlier `content` guess). `lib/api.ts`: `getRules` /
+    `createRule` / `updateRule` / `deleteRule` (all `redirectOnAuthError: false`).
+  - Backend dependency: `revet_be` Phase 11 (`GET/POST /repos/{o}/{r}/rules`,
+    `PUT/DELETE /repos/{o}/{r}/rules/{id}`, access-checked).
+  - Gates: `pnpm typecheck` clean; `pnpm build` passes (both rules routes + page registered).
+    `pnpm lint` clean **for the new files** — only the pre-existing
+    `hooks/use-chat-stream.ts` error + warnings remain (present on `main`). The mount-fetch
+    effect uses the same `eslint-disable-next-line react-hooks/set-state-in-effect` pattern
+    as `WorkspaceNav`.
+
 - **Phase 8 (frontend) — Issues activity feed** (2026-07-02)
   - Mirrors the "Reviews" feed exactly (the issue analysis is GitHub-native — the bot
     comments on the issue; this surface only shows *that the agent ran*).

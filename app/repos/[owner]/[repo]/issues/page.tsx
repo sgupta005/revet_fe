@@ -40,8 +40,8 @@ export default async function IssuesPage({
           Issues
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Issues Revet has analyzed in {owner}/{repo}. The full analysis is posted
-          as a comment on the issue — open it on GitHub to read it.
+          Issues Revet has analyzed in {owner}/{repo}. The full analysis is
+          posted as a comment on the issue — open it on GitHub to read it.
         </p>
       </div>
 
